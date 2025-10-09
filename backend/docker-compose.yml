@@ -1,0 +1,25 @@
+services:
+  issuance-service:
+    build:
+      context: ./issuance-service
+    container_name: issuance-service
+    ports:
+      - "4001:4001"
+    volumes:
+      - ./shared:/app/shared
+    environment:
+      - DOCKER=1
+      - DB_PATH=/app/shared/credentials.db
+
+  verification-service:
+    build:
+      context: ./verification-service
+    container_name: verification-service
+    ports:
+      - "4002:4002"
+    volumes:
+      - ./shared:/app/shared
+    environment:
+      - DOCKER=1
+      - DB_PATH=/app/shared/credentials.db
+

@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: kube-issuance-service
+    env: docker
+    plan: free
+    dockerfilePath: ./Backend/issuance-service/Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 4001
+
+  - type: web
+    name: kube-verification-service
+    env: docker
+    plan: free
+    dockerfilePath: ./Backend/verification-service/Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 4002
