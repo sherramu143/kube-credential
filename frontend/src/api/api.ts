@@ -1,8 +1,7 @@
 import axios from "axios";
 
-const ISSUANCE_API = "http://44.226.145.213:4001";
-const VERIFICATION_API = "http://44.226.145.213:4002";
-
+const ISSUANCE_API = "https://kube-credential-issuance-19fc.onrender.com/issue";
+const VERIFICATION_API = "https://kube-credential-verifycredentials.onrender.com/verify";
 
 export const issueCredential = async (data: any) => {
  const response = await axios.post(ISSUANCE_API, data);
