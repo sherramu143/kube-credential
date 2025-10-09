@@ -14,9 +14,8 @@ RUN npm install cors @types/cors --save
 # Copy the service code
 COPY . .
 
-# ✅ Create shared folder and copy the credentials DB
-RUN mkdir -p ./shared
-COPY ../shared/credentials.db
+# Create shared folder (so we can mount the DB)
+RUN mkdir -p /app/shared
 
 # Build TypeScript
 RUN npm run build
