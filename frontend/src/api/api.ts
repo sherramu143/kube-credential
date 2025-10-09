@@ -1,7 +1,8 @@
 import axios from "axios";
 
-const ISSUANCE_API = "http://localhost:4001/issue";
-const VERIFICATION_API = "http://localhost:4002/verify";
+const ISSUANCE_API = "http://44.226.145.213:4001";
+const VERIFICATION_API = "http://44.226.145.213:4002";
+
 
 export const issueCredential = async (data: any) => {
  const response = await axios.post(ISSUANCE_API, data);

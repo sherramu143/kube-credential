@@ -15,7 +15,7 @@ const IssuancePage: React.FC = () => {
       setResult(null);
       setStatus(null);
 
-      const res = await axios.post("http://localhost:4001/issue", parsed);
+      const res = await axios.post("http://44.226.145.213:4001/issue", parsed);
       setResult(res.data);
       setStatus({ code: 200, message: "Success" });
     } catch (err) {
