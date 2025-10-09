@@ -1,10 +1,16 @@
 import express from "express";
 import { createDB } from "./db.js";
 import { v4 as uuidv4 } from "uuid";
+import cors from "cors";
 const app = express();
 const PORT = 4001;
 const WORKER_ID = `worker-${Math.floor(Math.random() * 1000)}`;
 app.use(express.json());
+app.use(cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+}));
 let db;
 createDB()
     .then((database) => {
@@ -16,8 +22,10 @@ createDB()
 });
 app.post("/issue", async (req, res) => {
     const { data } = req.body;
-    if (!data) {
-        return res.status(400).json({ error: "data is required" });
+    if (!data || !data.name || !data.email || !data.course) {
+        return res
+            .status(400)
+            .json({ error: "Missing required fields: name, email, course" });
     }
     try {
         const dataStr = JSON.stringify(data);
@@ -48,7 +56,7 @@ app.post("/issue", async (req, res) => {
     }
 });
 export { app };
-// ✅ Only start the server if not in test mode
+// Start server only if not in test mode
 if (process.env.NODE_ENV !== "test") {
     app.listen(PORT, () => {
         console.log(`🚀 Issuance Service running on port ${PORT} (${WORKER_ID})`);

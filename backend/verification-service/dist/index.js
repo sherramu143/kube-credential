@@ -1,10 +1,16 @@
 // src/index.ts
 import express from "express";
 import { createDB } from './db.js'; // <-- note the `.js` when using ES modules
+import cors from "cors";
 const app = express();
 const PORT = 4002;
 const WORKER_ID = `worker-${Math.floor(Math.random() * 1000)}`;
 app.use(express.json());
+app.use(cors({
+    origin: "*", // Allow any frontend URL
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+}));
 let db;
 // Initialize DB
 createDB().then((database) => {
