@@ -2,23 +2,19 @@ FROM node:20-bullseye
 
 WORKDIR /app
 
-# Copy package.json files first
+# Copy only package files first
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
-RUN npm install --save-dev @types/express @types/node
-RUN npm install cors @types/cors --save
+# Install dependencies (builds sqlite3 for Linux)
+RUN npm install --build-from-source
 
-# Copy source code
+RUN npm install cors @types/cors --save
+# Copy rest of the source code
 COPY . .
 
-# Build TypeScript
+# Build TypeScript if needed
 RUN npm run build
 
-# Expose your port
-EXPOSE 4002
-
-# Start the service
+# Command to run
 CMD ["node", "dist/index.js"]
 
