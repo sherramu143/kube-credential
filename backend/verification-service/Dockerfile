@@ -1,20 +1,29 @@
+# Use official Node.js LTS image
 FROM node:20-bullseye
 
+# Create app directory
 WORKDIR /app
 
-# Copy only package files first
+# Copy dependency files first for caching
 COPY package*.json ./
 
-# Install dependencies (builds sqlite3 for Linux)
+# Install dependencies (builds sqlite3 from source for Linux)
 RUN npm install --build-from-source
 
+# Add any extra dependencies you need (optional)
 RUN npm install cors @types/cors --save
-# Copy rest of the source code
+
+# Copy rest of the project files
 COPY . .
 
-# Build TypeScript if needed
+# Build TypeScript
 RUN npm run build
 
-# Command to run
-CMD ["node", "dist/index.js"]
+# Expose port (Render detects this)
+EXPOSE 3000
 
+# Use environment variable for DB path (optional)
+ENV DB_PATH=/app/shared/credentials.db
+
+# Run the app
+CMD ["node", "dist/index.js"]
