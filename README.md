@@ -59,8 +59,9 @@ This project was developed as part of the **Zupple Labs Pvt. Ltd. Full Stack Eng
 
 ```bash
 # Clone the repository
-git clone https://github.com/<your-username>/kube-credential.git
+git clone https://github.com/sherramu143/kube-credential.git
 cd kube-credential
+
 
 # Start backend microservices
 cd Backend
