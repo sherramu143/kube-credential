@@ -16,7 +16,7 @@ COPY . .
 
 # ✅ Create shared folder and copy the credentials DB
 RUN mkdir -p ./shared
-COPY ../shared/credentials.db ./shared/credentials.db
+COPY ../shared/credentials.db
 
 # Build TypeScript
 RUN npm run build
