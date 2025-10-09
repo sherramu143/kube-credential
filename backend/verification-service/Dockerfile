@@ -7,22 +7,23 @@ WORKDIR /app
 # Copy dependency files first for caching
 COPY package*.json ./
 
-# Install dependencies (builds sqlite3 from source for Linux)
+# Install dependencies
 RUN npm install --build-from-source
-
-# Add any extra dependencies you need (optional)
 RUN npm install cors @types/cors --save
 
-# Copy rest of the project files
+# Copy the service code
 COPY . .
+
+# ✅ Explicitly copy the shared database file from parent folder
+COPY ../shared/credentials.db ./shared/credentials.db
 
 # Build TypeScript
 RUN npm run build
 
 # Expose port (Render detects this)
-EXPOSE 3000
+EXPOSE 4002
 
-# Use environment variable for DB path (optional)
+# Environment variable for DB path
 ENV DB_PATH=/app/shared/credentials.db
 
 # Run the app
