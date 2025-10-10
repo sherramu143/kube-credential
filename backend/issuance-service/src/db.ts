@@ -18,11 +18,25 @@ export async function createDB() {
       filename: SHARED_DB_PATH,
       driver: sqlite3.Database,
     });
+
     console.log("✅ Connected to SQLite database");
+
+    // ✅ Create table if it doesn’t exist
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS credentials (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        credential_id TEXT UNIQUE,
+        name TEXT,
+        email TEXT,
+        issued_at TEXT,
+        worker_id TEXT
+      );
+    `);
+
+    console.log("✅ Verification Service DB initialized");
     return db;
   } catch (err) {
     console.error("❌ DB init error:", err);
     throw err;
   }
 }
-
