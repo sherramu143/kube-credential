@@ -1,32 +1,14 @@
-# Stage 1: Build the React app
+# Stage 1
 FROM node:20-bullseye AS build
-
-# Set working directory
 WORKDIR /app
-
-# Copy package files
-COPY package.json package-lock.json ./
-
-# Install dependencies
+COPY frontend/package.json frontend/package-lock.json ./
 RUN npm install
-
-# Copy all source code
-COPY . .
-
-# Build the app
+COPY frontend/. .
 RUN npm run build
 
-# Stage 2: Serve the app with nginx
+# Stage 2
 FROM nginx:alpine
-
-# Remove default nginx static files
 RUN rm -rf /usr/share/nginx/html/*
-
-# Copy build files from previous stage
 COPY --from=build /app/build /usr/share/nginx/html
-
-# Expose port 80
 EXPOSE 80
-
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
