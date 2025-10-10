@@ -1,20 +1,32 @@
+# Use official Node.js 20 LTS image (Debian-based)
 FROM node:20-bullseye
 
+# Set working directory
 WORKDIR /app
 
-# Copy only package files first
+# Install build tools for native modules (optional but safe)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends python3 make g++ && \
+    rm -rf /var/lib/apt/lists/*
+
+# Update npm to latest stable
+RUN npm install -g npm@11.6.2
+
+# Copy package.json & package-lock.json first for caching
 COPY package*.json ./
 
-# Install dependencies (builds sqlite3 for Linux)
-RUN npm install --build-from-source
+# Install dependencies inside container
+# Forces rebuild of sqlite3 to ensure Linux ELF binary
+RUN npm install --legacy-peer-deps
 
-RUN npm install cors @types/cors --save
-# Copy rest of the source code
+# Copy the rest of the application
 COPY . .
 
-# Build TypeScript if needed
+# Build the app (if using TypeScript or any build step)
 RUN npm run build
 
-# Command to run
-CMD ["node", "dist/index.js"]
+# Expose port if needed
+EXPOSE 4001
 
+# Start the service
+CMD ["node", "dist/index.js"]
