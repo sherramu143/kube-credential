@@ -1,7 +1,7 @@
 // src/index.ts
 import express, { Request, Response } from "express";
 import cors from "cors";
-import { createDB } from "./db.js"; // Make sure this exports a working SQLite DB
+import { createDB } from "./db.js";
 
 const app = express();
 const PORT = 4002;
@@ -10,22 +10,24 @@ const WORKER_ID = `worker-${Math.floor(Math.random() * 1000)}`;
 app.use(express.json());
 app.use(
   cors({
-    origin: "*", // Allow any frontend
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
 let db: any;
+let dbReady = false;
 
 // Initialize SQLite DB
 createDB()
   .then((database) => {
     db = database;
-    console.log(`✅ Verification Service DB initialized`);
+    dbReady = true;
+    console.log("✅ Verification Service DB initialized");
   })
   .catch((err) => {
-    console.error(`❌ Failed to initialize DB:`, err);
+    console.error("❌ Failed to initialize DB:", err);
   });
 
 // Health check
@@ -36,6 +38,11 @@ app.get("/health", (_req: Request, res: Response) => {
 // POST /verify — Verify a credential by ID
 app.post("/verify", async (req: Request, res: Response) => {
   try {
+    // Check DB ready
+    if (!dbReady) {
+      return res.status(503).json({ error: "Database not initialized yet" });
+    }
+
     const { credential_id } = req.body;
 
     if (!credential_id || typeof credential_id !== "string") {
@@ -51,11 +58,10 @@ app.post("/verify", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Credential not found" });
     }
 
+    // ✅ Verification successful
     return res.json({
       message: "Credential verified successfully",
-      credential_id: credential.credential_id,
-      issued_at: credential.issued_at,
-      worker_id: credential.worker_id,
+      credential,
     });
   } catch (err) {
     console.error(`[${WORKER_ID}] DB or server error:`, err);
@@ -63,7 +69,7 @@ app.post("/verify", async (req: Request, res: Response) => {
   }
 });
 
-// Start server
+// Start the server
 app.listen(PORT, () => {
   console.log(`🚀 Verification Service running on port ${PORT} (${WORKER_ID})`);
 });

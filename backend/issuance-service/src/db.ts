@@ -20,10 +20,11 @@ export async function createDB() {
 
     console.log("✅ Connected to SQLite database");
 
-    // ✅ Ensure table exists
+    // ✅ Create table with credential_id column
     await db.exec(`
       CREATE TABLE IF NOT EXISTS credentials (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        credential_id TEXT UNIQUE,
         name TEXT,
         issuer TEXT,
         recipient TEXT,
@@ -34,7 +35,7 @@ export async function createDB() {
       )
     `);
 
-    console.log("✅ Verification Service DB initialized");
+    console.log("✅ Credentials DB initialized");
     return db;
   } catch (err) {
     console.error("❌ DB init error:", err);

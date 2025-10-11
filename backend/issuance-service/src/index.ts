@@ -1,5 +1,4 @@
-import express from "express";
-import type { Request, Response } from "express";
+import express, { Request, Response } from "express";
 import { createDB } from "./db.js";
 import { v4 as uuidv4 } from "uuid";
 import cors from "cors";
@@ -19,72 +18,96 @@ app.use(
 
 let db: any;
 
-createDB()
-  .then((database) => {
-    db = database;
-    console.log(`✅ SQLite DB initialized for Issuance Service`);
-  })
-  .catch((err) => {
-    console.error("❌ DB init error:", err?.stack || err);
-  });
-
-app.post("/issue", async (req: Request, res: Response) => {
-  const { data } = req.body;
-
-  if (!data || !data.name || !data.email || !data.course) {
-    return res
-      .status(400)
-      .json({ error: "Missing required fields: name, email, course" });
-  }
-
+// ✅ Initialize DB before setting up routes
+async function startServer() {
   try {
-    const dataStr = JSON.stringify(data);
+    db = await createDB();
+    console.log(`✅ SQLite DB initialized for Issuance Service`);
 
-    const existing = await db.get(
-      "SELECT * FROM credentials WHERE data = ?",
-      dataStr
-    );
+    // -------------------------------
+    // 🚀 Routes
+    // -------------------------------
 
-    if (existing) {
-      console.log(`[${WORKER_ID}] Duplicate credential: ${existing.credential_id}`);
-      return res.json({
-        message: `Credential already issued by ${existing.worker_id}`,
-        credential_id: existing.credential_id,
-        issued_at: existing.issued_at,
-        worker_id: existing.worker_id,
-      });
-    }
+    // Issue a credential
+    app.post("/issue", async (req: Request, res: Response) => {
+      const { data } = req.body;
 
-    const credential_id = uuidv4();
-    const issued_at = new Date().toISOString();
+      if (!data || !data.name || !data.email || !data.course) {
+        return res
+          .status(400)
+          .json({ error: "Missing required fields: name, email, course" });
+      }
 
-    await db.run(
-      "INSERT INTO credentials (credential_id, data, issued_at, worker_id) VALUES (?, ?, ?, ?)",
-      credential_id,
-      dataStr,
-      issued_at,
-      WORKER_ID
-    );
+      try {
+        const dataStr = JSON.stringify(data);
 
-    console.log(`[${WORKER_ID}] Credential issued: ${credential_id}`);
+        // ✅ Check for duplicate
+        const existing = await db.get(
+          "SELECT * FROM credentials WHERE data = ?",
+          dataStr
+        );
 
-    res.json({
-      message: `Credential issued by ${WORKER_ID}`,
-      credential_id,
-      issued_at,
-      worker_id: WORKER_ID,
+        if (existing) {
+          console.log(`[${WORKER_ID}] Duplicate credential: ${existing.id}`);
+          return res.json({
+            message: `Credential already issued by ${existing.issuer}`,
+            credential_id: existing.credential_id || existing.id,
+            issued_at: existing.issueDate,
+            worker_id: WORKER_ID,
+          });
+        }
+
+        const credential_id = uuidv4();
+        const issued_at = new Date().toISOString();
+
+        // Insert into DB
+        await db.run(
+          `INSERT INTO credentials (credential_id, name, issuer, recipient, issueDate, expiryDate, status, data)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          credential_id,
+          data.name,
+          "Issuance Service",
+          data.email,
+          issued_at,
+          data.expiryDate || null,
+          "issued",
+          dataStr
+        );
+
+        // Immediately fetch the inserted row for logging
+        const insertedRow = await db.get(
+          "SELECT * FROM credentials WHERE credential_id = ?",
+          credential_id
+        );
+        console.log(`[${WORKER_ID}] Inserted credential in DB:`, insertedRow);
+
+        // Respond to client
+        res.json({
+          message: "Credential issued successfully",
+          credential_id,
+          issued_at,
+          worker_id: WORKER_ID,
+          insertedRow, // optional: return full DB row to Postman
+        });
+      } catch (err: any) {
+        console.error(`[${WORKER_ID}] DB error:`, err);
+        res.status(500).json({ error: err.message });
+      }
     });
-  } catch (err) {
-    console.error(`[${WORKER_ID}] DB error:`, err);
-    res.status(500).json({ error: "Internal server error" });
+
+    // Root endpoint
+    app.get("/", (req: Request, res: Response) => {
+      res.send(`Issuance Service running on port ${PORT} (${WORKER_ID})`);
+    });
+
+    // Start listening
+    app.listen(PORT, () => {
+      console.log(`🚀 Issuance Service running on port ${PORT} (${WORKER_ID})`);
+    });
+  } catch (err: any) {
+    console.error("❌ DB initialization failed:", err);
+    process.exit(1);
   }
-});
-
-export { app };
-
-// Start server only if not in test mode
-if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => {
-    console.log(`🚀 Issuance Service running on port ${PORT} (${WORKER_ID})`);
-  });
 }
+
+startServer();
