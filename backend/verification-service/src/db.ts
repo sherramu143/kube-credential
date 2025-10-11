@@ -11,6 +11,10 @@ const __dirname = path.dirname(__filename);
 
 // Root folder of the project (two levels up from service folder)
 const PROJECT_ROOT = path.resolve(__dirname, "../../");
+ 
+
+console.log("🟩 Current working directory:", process.cwd());
+console.log("🟩 __dirname:", path.resolve(),PROJECT_ROOT);
 
 // Shared database path
 export const SHARED_DB_PATH = "/app/shared/credentials.db";
