@@ -5,9 +5,11 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-const SHARED_DB_PATH =
-  process.env.DB_PATH || path.resolve(__dirname, "../shared/credentials.db");
+const isRender = process.env.RENDER === "true";
+//const SHARED_DB_PATH =
+  //process.env.DB_PATH || path.resolve(__dirname, "../shared/credentials.db");
+export const SHARED_DB_PATH = process.env.DB_PATH || 
+  (isRender ? "/tmp/credentials.db" : path.resolve(__dirname, "../shared/credentials.db"));
 
 export async function createDB() {
   console.log("DB Path:", SHARED_DB_PATH);
