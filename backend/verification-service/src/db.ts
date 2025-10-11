@@ -13,8 +13,8 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, "../../");
 
 // Shared database path
-export const SHARED_DB_PATH =
-  process.env.DB_PATH || path.join(PROJECT_ROOT, "shared", "credentials.db");
+export const SHARED_DB_PATH ="/tmp/credentials.db"
+  //process.env.DB_PATH || path.join(PROJECT_ROOT, "shared", "credentials.db");
 
 /**
  * Connects to the SQLite database (verification only)
