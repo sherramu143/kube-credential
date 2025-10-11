@@ -5,13 +5,11 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-//const isRender = process.env.RENDER === "true";
-//const SHARED_DB_PATH =
-  //process.env.DB_PATH || path.resolve(__dirname, "../shared/credentials.db");
-export const SHARED_DB_PATH ="/tmp/credentials.db"; 
-//process.env.DB_PATH || 
-  //(isRender ? "/tmp/credentials.db" : path.resolve(__dirname, "../shared/credentials.db"));
 
+// Always use /tmp on Render (ephemeral, auto-cleared every deploy)
+export const SHARED_DB_PATH = "/tmp/credentials.db";
+
+// Create DB connection and ensure table exists
 export async function createDB() {
   console.log("DB Path:", SHARED_DB_PATH);
 
@@ -21,9 +19,9 @@ export async function createDB() {
       driver: sqlite3.Database,
     });
 
-    console.log("✅ Connected to SQLite database");
+    console.log("✅ Connected to SQLite database:", SHARED_DB_PATH);
 
-    // ✅ Create table with credential_id column
+    // Ensure the table exists before any queries run
     await db.exec(`
       CREATE TABLE IF NOT EXISTS credentials (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,10 +33,10 @@ export async function createDB() {
         expiryDate TEXT,
         status TEXT,
         data TEXT
-      )
+      );
     `);
 
-    console.log("✅ Credentials DB initialized");
+    console.log("✅ Verification Service DB initialized");
     return db;
   } catch (err) {
     console.error("❌ DB init error:", err);
