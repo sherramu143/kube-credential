@@ -1,20 +1,30 @@
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Always use /tmp on Render (ephemeral, auto-cleared every deploy)
+// Choose DB path (Render allows /tmp and /app)
 export const SHARED_DB_PATH = "/app/shared/credentials.db";
-console.log("🟩 Current working directory:", process.cwd());
-console.log("🟩 __dirname:", path.resolve());
-// Create DB connection and ensure table exists
-export async function createDB() {
-  console.log("DB Path:", SHARED_DB_PATH);
 
+// Log useful paths for debugging
+console.log("🟩 Current working directory:", process.cwd());
+console.log("🟩 __dirname:", __dirname);
+console.log("🟩 DB Path:", SHARED_DB_PATH);
+
+export async function createDB() {
   try {
+    // ✅ Ensure directory exists
+    const dbDir = path.dirname(SHARED_DB_PATH);
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+      console.log("✅ Created missing directory:", dbDir);
+    }
+
+    // ✅ Open SQLite connection
     const db = await open({
       filename: SHARED_DB_PATH,
       driver: sqlite3.Database,
@@ -22,7 +32,7 @@ export async function createDB() {
 
     console.log("✅ Connected to SQLite database:", SHARED_DB_PATH);
 
-    // Ensure the table exists before any queries run
+    // ✅ Create table if it doesn't exist
     await db.exec(`
       CREATE TABLE IF NOT EXISTS credentials (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,7 +47,7 @@ export async function createDB() {
       );
     `);
 
-    console.log("✅ Verification Service DB initialized");
+    console.log("✅ DB initialized successfully");
     return db;
   } catch (err) {
     console.error("❌ DB init error:", err);
