@@ -7,8 +7,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Always use /tmp on Render (ephemeral, auto-cleared every deploy)
-export const SHARED_DB_PATH = "/tmp/credentials.db";
-
+export const SHARED_DB_PATH = "/app/shared/credentials.db";
+console.log("🟩 Current working directory:", process.cwd());
+console.log("🟩 __dirname:", path.resolve());
 // Create DB connection and ensure table exists
 export async function createDB() {
   console.log("DB Path:", SHARED_DB_PATH);
