@@ -8,7 +8,6 @@ services:
     volumes:
       - ./shared:/app/shared
     environment:
-      - DOCKER=1
       - DB_PATH=/app/shared/credentials.db
 
   verification-service:
@@ -20,7 +19,6 @@ services:
     volumes:
       - ./shared:/app/shared
     environment:
-      - DOCKER=1
-      - DB_PATH=/tmp/credentials.db
-      
-
+      - DB_PATH=/app/shared/credentials.db
+    depends_on:
+      - issuance-service
