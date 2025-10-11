@@ -8,8 +8,9 @@ const __dirname = path.dirname(__filename);
 const isRender = process.env.RENDER === "true";
 //const SHARED_DB_PATH =
   //process.env.DB_PATH || path.resolve(__dirname, "../shared/credentials.db");
-export const SHARED_DB_PATH = process.env.DB_PATH || 
-  (isRender ? "/tmp/credentials.db" : path.resolve(__dirname, "../shared/credentials.db"));
+export const SHARED_DB_PATH ="/tmp/credentials.db"; 
+//process.env.DB_PATH || 
+  //(isRender ? "/tmp/credentials.db" : path.resolve(__dirname, "../shared/credentials.db"));
 
 export async function createDB() {
   console.log("DB Path:", SHARED_DB_PATH);
