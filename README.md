@@ -335,6 +335,7 @@ kube-credential/
 
 **Name:** Ramu Sher
 **Email:** sherramu787@gmail.com
+**phone:** 7995727830
 **Role:** Full Stack Engineer Candidate
 **Date:** October 2025
 
