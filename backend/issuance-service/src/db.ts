@@ -2,39 +2,20 @@ import sqlite3 from "sqlite3";
 import { open } from "sqlite";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// ✅ Choose DB path (Docker uses /app/shared, local uses ../shared)
 export const SHARED_DB_PATH =
-  process.env.DB_PATH ||
-  path.resolve(__dirname, "../shared/credentials.db");
+  process.env.DB_PATH || path.resolve(__dirname, "../shared/credentials.db");
 
-// 🧩 Log paths for debugging
-console.log("🟩 Current working directory:", process.cwd());
-console.log("🟩 __dirname:", __dirname);
 console.log("🟩 DB Path:", SHARED_DB_PATH);
 
 export async function createDB() {
   try {
-    // ✅ Ensure directory exists
     const dbDir = path.dirname(SHARED_DB_PATH);
-    if (!fs.existsSync(dbDir)) {
-      fs.mkdirSync(dbDir, { recursive: true });
-      console.log("✅ Created missing directory:", dbDir);
-    }
+    if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 
-    // ✅ Open SQLite connection
-    const db = await open({
-      filename: SHARED_DB_PATH,
-      driver: sqlite3.Database,
-    });
+    const db = await open({ filename: SHARED_DB_PATH, driver: sqlite3.Database });
 
-    console.log("✅ Connected to SQLite database:", SHARED_DB_PATH);
-
-    // ✅ Create table if it doesn't exist
+    // Create table if it doesn't exist
     await db.exec(`
       CREATE TABLE IF NOT EXISTS credentials (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
