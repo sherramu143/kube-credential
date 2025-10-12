@@ -7,10 +7,11 @@
     "allowSyntheticDefaultImports": true,
     "outDir": "dist",
     "rootDir": "src",
-    "strict": true
+    "strict": true,
+    "types": ["jest", "node"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "tests"]
+  "exclude": ["node_modules"]
 }
 
 

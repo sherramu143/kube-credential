@@ -1,4 +1,8 @@
+import { config } from "dotenv";
 import { Pool } from "pg";
+
+// Load environment variables from .env file in the project root
+config({ path: '../../.env' });
 
 const pool = new Pool({
   host: process.env.DB_HOST,

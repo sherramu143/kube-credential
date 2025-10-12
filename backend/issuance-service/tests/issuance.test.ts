@@ -1,33 +1,53 @@
+import { jest, describe, it, beforeEach, expect } from '@jest/globals';
+
+// Mock the db module before importing anything else
+const mockQuery = jest.fn() as jest.MockedFunction<any>;
+jest.mock('../src/db', () => ({
+  query: mockQuery,
+  initDB: jest.fn(),
+}));
+
 import request from "supertest";
 import { app } from "../src/index.js";
-import { describe, it } from "node:test";
-import assert from "node:assert/strict";
 
-describe("Verification Service", () => {
-  it("✅ should verify an existing credential", async () => {
-    const credential_id = "existing-credential-id";
+describe("Issuance Service", () => {
+  const DEFAULT_CREDENTIAL_ID = "DEFAULT_CREDENTIAL_ID";
 
-    const res = await request(app)
-      .post("/verify")
-      .send({ credential_id });
-
-    assert.equal(res.status, 200);
-    assert.ok(res.body.message || res.body.data, "Expected verification message");
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  it("❌ should return 404 for non-existing credential", async () => {
-    const res = await request(app)
-      .post("/verify")
-      .send({ credential_id: "non-existing-id" });
+  it("✅ should issue a credential with default ID", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] }); // No existing credentials
+    mockQuery.mockResolvedValueOnce({}); // Insert success
 
-    assert.equal(res.status, 404);
-    assert.ok(res.body.error, "Expected an error message");
+    const res = await request(app)
+      .post("/issue")
+      .set('Content-Type', 'application/json')
+      .send({
+        data: {
+          name: "Test User",
+          email: "test@example.com",
+          course: "NodeJS Basics",
+        },
+        credential_id: DEFAULT_CREDENTIAL_ID,
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('message', 'worked');
+    expect(res.body).toHaveProperty('credentials');
+    expect(Array.isArray(res.body.credentials)).toBe(true);
+    expect(res.body.credentials.length).toBe(1);
+    expect(res.body.credentials[0]).toHaveProperty('credential_id');
   });
 
-  it("⚠️ should return 400 if credential_id missing", async () => {
-    const res = await request(app).post("/verify").send({});
+  it("⚠️ should return 400 if required fields are missing", async () => {
+    const res = await request(app)
+      .post("/issue")
+      .set('Content-Type', 'application/json')
+      .send({ data: { name: "Test User" } });
 
-    assert.equal(res.status, 400);
-    assert.ok(res.body.error, "Expected a missing credential_id error");
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error');
   });
 });

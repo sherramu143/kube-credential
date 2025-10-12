@@ -3,7 +3,7 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import { query, initDB } from "./db.js";  // now valid
 
-const app = express();
+ export const app = express();
 const PORT = process.env.PORT || 4002;
 const WORKER_ID = `worker-${Math.floor(Math.random() * 1000)}`;
 
@@ -14,10 +14,6 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-async function startServer() {
-  try {
-    await initDB(); // will create table if missing
-    console.log(`✅ Postgres DB initialized for Verification Service`);
 app.post("/verify", async (req: Request, res: Response) => {
   const { credential_id } = req.body;
   if (!credential_id) {
@@ -47,20 +43,31 @@ app.post("/verify", async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error(`[${WORKER_ID}] DB error:`, err);
+    // Check if it's a UUID validation error
+    if (err.code === '22P02') {
+      return res
+        .status(404)
+        .json({ verified: false, message: "Credential not found" });
+    }
     res.status(500).json({ error: err.message });
   }
 });
 
+app.get("/", (_req, res) => {
+  res.send(`Verification Service running on port ${PORT} (${WORKER_ID})`);
+});
 
-    app.get("/", (_req, res) => {
-      res.send(`Verification Service running on port ${PORT} (${WORKER_ID})`);
-    });
+async function startServer() {
+  try {
+    if (process.env.NODE_ENV !== 'test') {
+      await initDB(); // will create table if missing
+      console.log(`✅ Postgres DB initialized for Verification Service`);
 
-    // Start server
-    app.listen(PORT, () => {
-      console.log(`🚀 Verification Service running on port ${PORT} (${WORKER_ID})`);
-    });
-
+      // Start server only if not in test mode
+      app.listen(PORT, () => {
+        console.log(`🚀 Verification Service running on port ${PORT} (${WORKER_ID})`);
+      });
+    }
   } catch (err: any) {
     console.error("❌ DB initialization failed:", err);
     process.exit(1);
