@@ -7,10 +7,12 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Choose DB path (Render allows /tmp and /app)
-export const SHARED_DB_PATH = "/app/shared/credentials.db";
+// ✅ Choose DB path (Docker uses /app/shared, local uses ../shared)
+export const SHARED_DB_PATH =
+  process.env.DB_PATH ||
+  path.resolve(__dirname, "../shared/credentials.db");
 
-// Log useful paths for debugging
+// 🧩 Log paths for debugging
 console.log("🟩 Current working directory:", process.cwd());
 console.log("🟩 __dirname:", __dirname);
 console.log("🟩 DB Path:", SHARED_DB_PATH);

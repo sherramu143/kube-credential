@@ -1,77 +1,79 @@
-// src/index.ts
 import express, { Request, Response } from "express";
-import cors from "cors";
 import { createDB } from "./db.js";
-
+import cors from "cors";
 const app = express();
 const PORT = 4002;
 const WORKER_ID = `worker-${Math.floor(Math.random() * 1000)}`;
 
 app.use(express.json());
+// Instead of:
+// app.use(require("cors")({ ... }));
+
+// Use ES module import:
+
+
 app.use(
   cors({
     origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
+
 let db: any;
-let dbReady = false;
 
-// Initialize SQLite DB
-createDB()
-  .then((database) => {
-    db = database;
-    dbReady = true;
-    console.log("✅ Verification Service DB initialized");
-  })
-  .catch((err) => {
-    console.error("❌ Failed to initialize DB:", err);
-  });
-
-// Health check
-app.get("/health", (_req: Request, res: Response) => {
-  res.json({ status: "ok", worker_id: WORKER_ID });
-});
-
-// POST /verify — Verify a credential by ID
-app.post("/verify", async (req: Request, res: Response) => {
+async function startServer() {
   try {
-    // Check DB ready
-    if (!dbReady) {
-      return res.status(503).json({ error: "Database not initialized yet" });
-    }
+    db = await createDB();
+    console.log(`✅ SQLite DB initialized for Verification Service`);
 
-    const { credential_id } = req.body;
+    // -------------------------------
+    // 🚀 Routes
+    // -------------------------------
 
-    if (!credential_id || typeof credential_id !== "string") {
-      return res.status(400).json({ error: "Invalid or missing credential_id" });
-    }
+    // Verify a credential
+    app.post("/verify", async (req: Request, res: Response) => {
+      const { credential_id } = req.body;
 
-    const credential = await db.get(
-      "SELECT * FROM credentials WHERE credential_id = ?",
-      credential_id
-    );
+      if (!credential_id) {
+        return res.status(400).json({ error: "Missing credential_id" });
+      }
 
-    if (!credential) {
-      return res.status(404).json({ error: "Credential not found" });
-    }
+      try {
+        const credential = await db.get(
+          "SELECT * FROM credentials WHERE credential_id = ?",
+          credential_id
+        );
 
-    // ✅ Verification successful
-    return res.json({
-      message: "Credential verified successfully",
-      credential,
+        if (!credential) {
+          return res.status(404).json({ verified: false, message: "Credential not found" });
+        }
+
+        // Simple verification logic
+        res.json({
+          verified: credential.status === "issued",
+          credential,
+          worker_id: WORKER_ID,
+        });
+      } catch (err: any) {
+        console.error(`[${WORKER_ID}] DB error:`, err);
+        res.status(500).json({ error: err.message });
+      }
     });
-  } catch (err) {
-    console.error(`[${WORKER_ID}] DB or server error:`, err);
-    return res.status(500).json({ error: "Internal server error" });
+
+    // Root endpoint
+    app.get("/", (req: Request, res: Response) => {
+      res.send(`Verification Service running on port ${PORT} (${WORKER_ID})`);
+    });
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Verification Service running on port ${PORT} (${WORKER_ID})`);
+    });
+  } catch (err: any) {
+    console.error("❌ DB initialization failed:", err);
+    process.exit(1);
   }
-});
+}
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`🚀 Verification Service running on port ${PORT} (${WORKER_ID})`);
-});
-
-export { app };
+startServer();

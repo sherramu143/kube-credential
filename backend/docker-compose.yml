@@ -20,5 +20,3 @@ services:
       - ./shared:/app/shared
     environment:
       - DB_PATH=/app/shared/credentials.db
-    depends_on:
-      - issuance-service
