@@ -10,8 +10,8 @@ RUN npm install --legacy-peer-deps
 
 COPY . .
 
-# Build TypeScript -> dist
 RUN npm run build
 
 EXPOSE 4002
-CMD ["npm", "start"]
+
+CMD ["node", "dist/index.js"]

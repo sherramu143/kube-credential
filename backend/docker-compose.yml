@@ -1,26 +1,28 @@
 version: "3.9"
 
+# Reusable database credentials
+x-database-credentials: &db-creds
+  DB_HOST: dpg-d3lpfemmcj7s73a4kn5g-a.oregon-postgres.render.com
+  DB_PORT: 5432
+  DB_NAME: credentialsdb_idzs
+  DB_USER: dbuser
+  DB_PASSWORD: "AAP7BlHLhuRLkbwqy9hxdrjmcFCEZ7cY"
+
 services:
   issuance-service:
-    build:
-      context: ./issuance-service
+    build: ./issuance-service
     container_name: issuance-service
     ports:
       - "4001:4001"
-    volumes:
-      - ./shared:/app/shared
     environment:
-      - DB_PATH=/app/shared/credentials.db
+      <<: *db-creds
 
   verification-service:
-    build:
-      context: ./verification-service
+    build: ./verification-service
     container_name: verification-service
     depends_on:
       - issuance-service
     ports:
       - "4002:4002"
-    volumes:
-      - ./shared:/app/shared
     environment:
-      - DB_PATH=/app/shared/credentials.db
+      <<: *db-creds

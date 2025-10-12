@@ -1,36 +1,24 @@
 // verification-service/src/index.ts
 import express, { Request, Response } from "express";
-import { createDB, SHARED_DB_PATH } from "./db.js";
-import { open } from "sqlite";
-import sqlite3 from "sqlite3";
 import cors from "cors";
+import { query, initDB } from "./db.js";  // now valid
 
 const app = express();
 const PORT = process.env.PORT || 4002;
 const WORKER_ID = `worker-${Math.floor(Math.random() * 1000)}`;
 
 app.use(express.json());
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
-
-let db: any;
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 
 async function startServer() {
   try {
-    // Connect to the shared database
-    db = await createDB();
-    console.log(`✅ SQLite DB initialized for Verification Service`);
+    await initDB(); // will create table if missing
+    console.log(`✅ Postgres DB initialized for Verification Service`);
 
-    // -------------------------------
-    // 🚀 Routes
-    // -------------------------------
-
-    // Verify a credential
     app.post("/verify", async (req: Request, res: Response) => {
       const { credential_id } = req.body;
       if (!credential_id) {
@@ -38,10 +26,11 @@ async function startServer() {
       }
 
       try {
-        const credential = await db.get(
-          "SELECT * FROM credentials WHERE credential_id = ?",
-          credential_id
+        const result = await query(
+          "SELECT * FROM credentials WHERE credential_id = $1",
+          [credential_id]
         );
+        const credential = result.rows[0];
 
         if (!credential) {
           return res
@@ -60,42 +49,7 @@ async function startServer() {
       }
     });
 
-    // Debug route to inspect DB contents
-    app.get("/debug/db", async (req: Request, res: Response) => {
-      try {
-        // Open the DB directly using the shared path
-        const debugDb = await open({
-          filename: SHARED_DB_PATH,
-          driver: sqlite3.Database,
-        });
-
-        // Get all tables
-        const tables = await debugDb.all(
-          "SELECT name FROM sqlite_master WHERE type='table'"
-        );
-
-        let credentials: any[] = [];
-        if (tables.some((t) => t.name === "credentials")) {
-          credentials = await debugDb.all("SELECT * FROM credentials");
-        }
-
-        await debugDb.close();
-
-        console.log(`[${WORKER_ID}] /debug/db called - Tables:`, tables);
-        console.log(`[${WORKER_ID}] /debug/db called - Credentials:`, credentials);
-
-        res.json({
-          tables,
-          credentials,
-        });
-      } catch (err: any) {
-        console.error(`[${WORKER_ID}] Error reading DB:`, err.message);
-        res.status(500).json({ error: err.message });
-      }
-    });
-
-    // Root endpoint
-    app.get("/", (req: Request, res: Response) => {
+    app.get("/", (_req, res) => {
       res.send(`Verification Service running on port ${PORT} (${WORKER_ID})`);
     });
 
@@ -103,6 +57,7 @@ async function startServer() {
     app.listen(PORT, () => {
       console.log(`🚀 Verification Service running on port ${PORT} (${WORKER_ID})`);
     });
+
   } catch (err: any) {
     console.error("❌ DB initialization failed:", err);
     process.exit(1);

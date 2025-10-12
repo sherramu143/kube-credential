@@ -1,57 +1,38 @@
-// db.ts
-import sqlite3 from "sqlite3";
-import { open, Database } from "sqlite";
-import fs from "fs";
-import path from "path";
+import { Pool } from "pg";
 
-// ✅ Hardcoded shared path for Docker/Render deployment
-export const SHARED_DB_PATH = process.env.DB_PATH || "/app/shared/credentials.db";
+const pool = new Pool({
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT || 5432),
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  ssl: { rejectUnauthorized: true },
+});
 
-// 🧩 Debug logs
-console.log("🟩 Current working directory:", process.cwd());
-console.log("🟩 DB Path:", SHARED_DB_PATH);
-
-/**
- * Connects to the SQLite database (creates if missing)
- * @returns SQLite Database instance
- */
-export async function createDB(): Promise<Database> {
+console.log(pool)
+export async function query(text: string, params?: any[]) {
+  const client = await pool.connect();
   try {
-    // Ensure the parent directory exists
-    const dbDir = path.dirname(SHARED_DB_PATH);
-    if (!fs.existsSync(dbDir)) {
-      fs.mkdirSync(dbDir, { recursive: true });
-      console.log("✅ Created missing directory:", dbDir);
-    }
-
-    // Open SQLite connection
-    const db = await open({
-      filename: SHARED_DB_PATH,
-      driver: sqlite3.Database,
-    });
-
-    console.log("✅ Connected to SQLite database:", SHARED_DB_PATH);
-
-    // Ensure credentials table exists
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS credentials (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        credential_id TEXT UNIQUE,
-        name TEXT,
-        issuer TEXT,
-        recipient TEXT,
-        issueDate TEXT,
-        expiryDate TEXT,
-        status TEXT,
-        data TEXT
-      );
-    `);
-
-    console.log("✅ 'credentials' table ensured in DB");
-
-    return db;
-  } catch (err) {
-    console.error("❌ DB init error:", err);
-    throw err;
+    const res = await client.query(text, params);
+    return res;
+  } finally {
+    client.release();
   }
+}
+
+// New: initDB to create table if it doesn't exist
+export async function initDB() {
+  await query(`
+    CREATE TABLE IF NOT EXISTS credentials (
+      id SERIAL PRIMARY KEY,
+      credential_id UUID UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      issuer TEXT NOT NULL,
+      recipient TEXT NOT NULL,
+      issueDate TIMESTAMP NOT NULL,
+      expiryDate TIMESTAMP,
+      status TEXT NOT NULL,
+      data JSONB NOT NULL
+    );
+  `);
 }
