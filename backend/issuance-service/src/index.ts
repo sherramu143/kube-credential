@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import cors from "cors";
 
 const app = express();
-const PORT = 4001; // Hardcoded port
+const PORT = process.env.PORT || 4001;
 const WORKER_ID = `worker-${Math.floor(Math.random() * 1000)}`;
 
 app.use(express.json());
