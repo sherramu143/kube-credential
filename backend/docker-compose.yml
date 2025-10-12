@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   issuance-service:
     build:
@@ -14,6 +16,8 @@ services:
     build:
       context: ./verification-service
     container_name: verification-service
+    depends_on:
+      - issuance-service
     ports:
       - "4002:4002"
     volumes:
