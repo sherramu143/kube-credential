@@ -1,5 +1,6 @@
+// verification-service/src/index.ts
 import express, { Request, Response } from "express";
-import { createDB } from "./db.js";
+import { createDB, SHARED_DB_PATH } from "./db.js";
 import { open } from "sqlite";
 import sqlite3 from "sqlite3";
 import cors from "cors";
@@ -21,6 +22,7 @@ let db: any;
 
 async function startServer() {
   try {
+    // Connect to the shared database
     db = await createDB();
     console.log(`✅ SQLite DB initialized for Verification Service`);
 
@@ -31,7 +33,6 @@ async function startServer() {
     // Verify a credential
     app.post("/verify", async (req: Request, res: Response) => {
       const { credential_id } = req.body;
-
       if (!credential_id) {
         return res.status(400).json({ error: "Missing credential_id" });
       }
@@ -43,7 +44,9 @@ async function startServer() {
         );
 
         if (!credential) {
-          return res.status(404).json({ verified: false, message: "Credential not found" });
+          return res
+            .status(404)
+            .json({ verified: false, message: "Credential not found" });
         }
 
         res.json({
@@ -57,17 +60,22 @@ async function startServer() {
       }
     });
 
-    // Temporary debug endpoint to inspect DB contents
+    // Debug route to inspect DB contents
     app.get("/debug/db", async (req: Request, res: Response) => {
       try {
-        // Open the same DB file in read-only mode
-        const debugDb = await open({ filename: db.filename, driver: sqlite3.Database });
+        // Open the DB directly using the shared path
+        const debugDb = await open({
+          filename: SHARED_DB_PATH,
+          driver: sqlite3.Database,
+        });
 
-        // List all tables
-        const tables = await debugDb.all("SELECT name FROM sqlite_master WHERE type='table'");
+        // Get all tables
+        const tables = await debugDb.all(
+          "SELECT name FROM sqlite_master WHERE type='table'"
+        );
+
         let credentials: any[] = [];
-
-        if (tables.some(t => t.name === "credentials")) {
+        if (tables.some((t) => t.name === "credentials")) {
           credentials = await debugDb.all("SELECT * FROM credentials");
         }
 
@@ -91,6 +99,7 @@ async function startServer() {
       res.send(`Verification Service running on port ${PORT} (${WORKER_ID})`);
     });
 
+    // Start server
     app.listen(PORT, () => {
       console.log(`🚀 Verification Service running on port ${PORT} (${WORKER_ID})`);
     });
