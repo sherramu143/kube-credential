@@ -1,0 +1,3 @@
+- [ ] Fix credential_id generation in issuance-service/src/index.ts to use uuidv4() instead of random number
+- [ ] Run docker-compose up to verify services start without UUID errors
+- [ ] Run issuance tests to confirm functionality
